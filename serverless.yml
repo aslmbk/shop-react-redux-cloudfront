@@ -20,7 +20,7 @@ plugins:
 custom:
   client:
     bucketName: my-store-app
-    distributionFolder: dist
+    distributionFolder: infra/resources/build
   s3BucketName: ${self:custom.client.bucketName}
 
   ## Serverless-single-page-app-plugin configuration:
