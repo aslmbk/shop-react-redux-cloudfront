@@ -12,6 +12,7 @@ node_modules
 coverage
 dist
 dist-ssr
+infra/resources
 *.local
 
 # Editor directories and files
