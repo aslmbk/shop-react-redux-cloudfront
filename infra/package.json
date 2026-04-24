@@ -5,7 +5,8 @@
     "infra": "bin/infra.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run bundle:product-service",
+    "bundle:product-service": "node scripts/build-product-service.mjs",
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk"
@@ -13,6 +14,7 @@
   "devDependencies": {
     "@types/jest": "^30",
     "@types/node": "^24.10.1",
+    "esbuild": "^0.25.11",
     "jest": "^30",
     "ts-jest": "^29",
     "aws-cdk": "2.1118.0",
