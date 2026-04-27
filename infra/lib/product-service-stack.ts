@@ -36,12 +36,18 @@ export class ProductServiceStack extends Stack {
       path.join(__dirname, "../dist/product-service"),
     );
 
+    const lambdaEnv = {
+      PRODUCTS_TABLE_NAME: productsTable.tableName,
+      STOCK_TABLE_NAME: stockTable.tableName,
+    };
+
     const getProductsList = new aws_lambda.Function(this, "getProductsList", {
       runtime: aws_lambda.Runtime.NODEJS_20_X,
       memorySize: 1024,
       timeout: Duration.seconds(5),
       handler: "get-products-list.main",
       code: productServiceCode,
+      environment: lambdaEnv,
     });
 
     const getProductsById = new aws_lambda.Function(this, "getProductsById", {
@@ -50,7 +56,13 @@ export class ProductServiceStack extends Stack {
       timeout: Duration.seconds(5),
       handler: "get-products-by-id.main",
       code: productServiceCode,
+      environment: lambdaEnv,
     });
+
+    productsTable.grantReadData(getProductsList);
+    stockTable.grantReadData(getProductsList);
+    productsTable.grantReadData(getProductsById);
+    stockTable.grantReadData(getProductsById);
 
     const api = new aws_apigateway.RestApi(this, "ProductServiceApi", {
       restApiName: "Product Service",
@@ -90,10 +102,14 @@ export class ProductServiceStack extends Stack {
 
     new CfnOutput(this, "ProductsTableName", {
       value: productsTable.tableName,
+      description: "DynamoDB products table name",
+      exportName: "ProductsTableName",
     });
 
     new CfnOutput(this, "StockTableName", {
       value: stockTable.tableName,
+      description: "DynamoDB stock table name",
+      exportName: "StockTableName",
     });
   }
 }

@@ -21,6 +21,7 @@ await build({
     },
   ],
   bundle: true,
+  external: ["@aws-sdk/*"],
   format: "cjs",
   outdir,
   platform: "node",
