@@ -1,9 +1,11 @@
 import {
   CfnOutput,
   Duration,
+  RemovalPolicy,
   Stack,
   type StackProps,
   aws_apigateway,
+  aws_dynamodb,
   aws_lambda,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
@@ -12,6 +14,23 @@ import * as path from "path";
 export class ProductServiceStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    const productsTable = new aws_dynamodb.Table(this, "ProductsTable", {
+      tableName: "products",
+      partitionKey: { name: "id", type: aws_dynamodb.AttributeType.STRING },
+      billingMode: aws_dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
+    const stockTable = new aws_dynamodb.Table(this, "StockTable", {
+      tableName: "stock",
+      partitionKey: {
+        name: "product_id",
+        type: aws_dynamodb.AttributeType.STRING,
+      },
+      billingMode: aws_dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
 
     const productServiceCode = aws_lambda.Code.fromAsset(
       path.join(__dirname, "../dist/product-service"),
@@ -67,6 +86,14 @@ export class ProductServiceStack extends Stack {
       value: `${api.url}products/{productId}`,
       description: "GET product by id endpoint",
       exportName: "ProductByIdApiUrl",
+    });
+
+    new CfnOutput(this, "ProductsTableName", {
+      value: productsTable.tableName,
+    });
+
+    new CfnOutput(this, "StockTableName", {
+      value: stockTable.tableName,
     });
   }
 }
