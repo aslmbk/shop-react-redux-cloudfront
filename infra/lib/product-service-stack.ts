@@ -59,10 +59,22 @@ export class ProductServiceStack extends Stack {
       environment: lambdaEnv,
     });
 
+    const createProduct = new aws_lambda.Function(this, "createProduct", {
+      runtime: aws_lambda.Runtime.NODEJS_20_X,
+      memorySize: 1024,
+      timeout: Duration.seconds(5),
+      handler: "create-product.main",
+      code: productServiceCode,
+      environment: lambdaEnv,
+    });
+
     productsTable.grantReadData(getProductsList);
     stockTable.grantReadData(getProductsList);
     productsTable.grantReadData(getProductsById);
     stockTable.grantReadData(getProductsById);
+
+    productsTable.grantWriteData(createProduct);
+    stockTable.grantWriteData(createProduct);
 
     const api = new aws_apigateway.RestApi(this, "ProductServiceApi", {
       restApiName: "Product Service",
@@ -72,7 +84,7 @@ export class ProductServiceStack extends Stack {
       },
       defaultCorsPreflightOptions: {
         allowOrigins: aws_apigateway.Cors.ALL_ORIGINS,
-        allowMethods: ["GET", "OPTIONS"],
+        allowMethods: ["GET", "POST", "OPTIONS"],
       },
     });
 
@@ -80,6 +92,10 @@ export class ProductServiceStack extends Stack {
     products.addMethod(
       "GET",
       new aws_apigateway.LambdaIntegration(getProductsList),
+    );
+    products.addMethod(
+      "POST",
+      new aws_apigateway.LambdaIntegration(createProduct),
     );
 
     const productById = products.addResource("{productId}");

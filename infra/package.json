@@ -16,6 +16,7 @@
   "devDependencies": {
     "@types/jest": "^30",
     "@types/node": "^24.10.1",
+    "@types/uuid": "^10.0.0",
     "aws-cdk": "2.1118.0",
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-client-mock-jest": "^4.1.0",
@@ -29,6 +30,7 @@
     "@aws-sdk/client-dynamodb": "^3.1037.0",
     "@aws-sdk/lib-dynamodb": "^3.1037.0",
     "aws-cdk-lib": "^2.248.0",
-    "constructs": "^10.5.0"
+    "constructs": "^10.5.0",
+    "uuid": "^14.0.0"
   }
 }

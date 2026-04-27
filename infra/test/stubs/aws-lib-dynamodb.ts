@@ -1,7 +1,10 @@
 /**
  * Test stub for `@aws-sdk/lib-dynamodb`.
- * Real SDK v3 pulls ESM-only deps Jest cannot load; handlers are tested with `aws-sdk-client-mock`
- * against this stub (`mockClient(DynamoDBDocumentClient)` matches the same class `dynamodb.ts` uses).
+ * The real SDK v3 pulls ESM-only dependencies that Jest does not load well, so tests map `@aws-sdk/*`
+ * here. Handlers import the same symbols as production (`ScanCommand`, `GetCommand`,
+ * `TransactWriteCommand`, `DynamoDBDocumentClient`); unit tests then use `aws-sdk-client-mock`'s
+ * `mockClient(DynamoDBDocumentClient)` and `.on(SomeCommand)` / `.commandCalls(SomeCommand)` against
+ * these classes (see `get-products-*.test.ts`, `create-product.test.ts`).
  */
 import type { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
@@ -11,6 +14,10 @@ export class ScanCommand {
 
 export class GetCommand {
   constructor(readonly input: Record<string, unknown>) {}
+}
+
+export class TransactWriteCommand {
+  constructor(readonly input: { TransactItems?: Record<string, unknown>[] }) {}
 }
 
 export class DynamoDBDocumentClient {

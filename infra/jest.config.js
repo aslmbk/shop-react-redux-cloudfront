@@ -7,7 +7,8 @@ module.exports = {
   },
   /**
    * Jest cannot execute the real AWS SDK v3 (transitive ESM). Tests map `@aws-sdk/*` to
-   * `test/stubs/*` and use `mockClient(DynamoDBDocumentClient)` against that stub class.
+   * `test/stubs/*`; product-service tests use `aws-sdk-client-mock` on the stub
+   * `DynamoDBDocumentClient` / command classes (`get-products-*.test.ts`, `create-product.test.ts`).
    */
   moduleNameMapper: {
     "^@aws-sdk/client-dynamodb$": "<rootDir>/test/stubs/aws-client-dynamodb.ts",

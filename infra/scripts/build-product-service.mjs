@@ -19,6 +19,10 @@ await build({
       in: path.join(infraRoot, "lib/product-service/get-products-by-id.ts"),
       out: "get-products-by-id",
     },
+    {
+      in: path.join(infraRoot, "lib/product-service/create-product.ts"),
+      out: "create-product",
+    },
   ],
   bundle: true,
   external: ["@aws-sdk/*"],
