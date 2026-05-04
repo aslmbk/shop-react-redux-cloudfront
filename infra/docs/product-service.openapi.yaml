@@ -1,0 +1,73 @@
+openapi: 3.0.3
+info:
+  title: Product Service API
+  version: 1.0.0
+servers:
+  - url: https://ysiwno6s1e.execute-api.us-east-1.amazonaws.com/dev
+paths:
+  /products:
+    get:
+      summary: Get products list
+      operationId: getProductsList
+      responses:
+        "200":
+          description: Full array of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+  /products/{productId}:
+    get:
+      summary: Get product by id
+      operationId: getProductsById
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matched product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Product:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - price
+      properties:
+        id:
+          type: string
+          example: 7567ec4b-b10c-48c5-9345-fc73c48a80aa
+        title:
+          type: string
+          example: ProductOne
+        description:
+          type: string
+          example: Short Product Description1
+        price:
+          type: number
+          example: 24
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Product not found

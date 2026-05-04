@@ -25,3 +25,5 @@ infra/resources
 *.njsproj
 *.sln
 *.sw?
+.cursor
+.cursor/*
