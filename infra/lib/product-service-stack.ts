@@ -7,11 +7,17 @@ import {
   aws_apigateway,
   aws_dynamodb,
   aws_lambda,
+  aws_sns,
+  aws_sns_subscriptions,
+  aws_sqs,
 } from "aws-cdk-lib";
+import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { Construct } from "constructs";
 import * as path from "path";
 
 export class ProductServiceStack extends Stack {
+  public readonly catalogItemsQueue: aws_sqs.IQueue;
+
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -31,6 +37,39 @@ export class ProductServiceStack extends Stack {
       billingMode: aws_dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
     });
+
+    const catalogItemsDlq = new aws_sqs.Queue(this, "CatalogItemsDLQ", {
+      queueName: "catalogItemsDLQ",
+      retentionPeriod: Duration.days(14),
+    });
+
+    const catalogItemsQueue = new aws_sqs.Queue(this, "CatalogItemsQueue", {
+      queueName: "catalogItemsQueue",
+      visibilityTimeout: Duration.seconds(60),
+      deadLetterQueue: { queue: catalogItemsDlq, maxReceiveCount: 3 },
+    });
+
+    const createProductTopic = new aws_sns.Topic(this, "CreateProductTopic", {
+      topicName: "createProductTopic",
+      displayName: "Product Created",
+    });
+
+    createProductTopic.addSubscription(
+      new aws_sns_subscriptions.EmailSubscription("assayf95@gmail.com"),
+    );
+
+    createProductTopic.addSubscription(
+      new aws_sns_subscriptions.EmailSubscription(
+        "assayf95+premium@gmail.com",
+        {
+          filterPolicy: {
+            price: aws_sns.SubscriptionFilter.numericFilter({
+              greaterThan: 100,
+            }),
+          },
+        },
+      ),
+    );
 
     const productServiceCode = aws_lambda.Code.fromAsset(
       path.join(__dirname, "../dist/product-service"),
@@ -68,6 +107,31 @@ export class ProductServiceStack extends Stack {
       environment: lambdaEnv,
     });
 
+    const catalogBatchProcess = new aws_lambda.Function(
+      this,
+      "catalogBatchProcess",
+      {
+        runtime: aws_lambda.Runtime.NODEJS_20_X,
+        memorySize: 1024,
+        timeout: Duration.seconds(30),
+        handler: "catalog-batch-process.main",
+        code: productServiceCode,
+        environment: {
+          ...lambdaEnv,
+          CREATE_PRODUCT_TOPIC_ARN: createProductTopic.topicArn,
+        },
+      },
+    );
+
+    createProductTopic.grantPublish(catalogBatchProcess);
+
+    catalogBatchProcess.addEventSource(
+      new SqsEventSource(catalogItemsQueue, {
+        batchSize: 5,
+        reportBatchItemFailures: true,
+      }),
+    );
+
     productsTable.grantReadData(getProductsList);
     stockTable.grantReadData(getProductsList);
     productsTable.grantReadData(getProductsById);
@@ -75,6 +139,9 @@ export class ProductServiceStack extends Stack {
 
     productsTable.grantWriteData(createProduct);
     stockTable.grantWriteData(createProduct);
+
+    productsTable.grantWriteData(catalogBatchProcess);
+    stockTable.grantWriteData(catalogBatchProcess);
 
     const api = new aws_apigateway.RestApi(this, "ProductServiceApi", {
       restApiName: "Product Service",
@@ -127,5 +194,22 @@ export class ProductServiceStack extends Stack {
       description: "DynamoDB stock table name",
       exportName: "StockTableName",
     });
+
+    new CfnOutput(this, "CatalogItemsQueueUrl", {
+      value: catalogItemsQueue.queueUrl,
+      exportName: "CatalogItemsQueueUrl",
+    });
+
+    new CfnOutput(this, "CatalogItemsQueueArn", {
+      value: catalogItemsQueue.queueArn,
+      exportName: "CatalogItemsQueueArn",
+    });
+
+    new CfnOutput(this, "CreateProductTopicArn", {
+      value: createProductTopic.topicArn,
+      exportName: "CreateProductTopicArn",
+    });
+
+    this.catalogItemsQueue = catalogItemsQueue;
   }
 }

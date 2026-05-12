@@ -7,16 +7,10 @@ import {
   ProductItem,
   JoinedProduct,
 } from "./dynamodb";
+import { validateProductBody } from "./validate";
 
 interface APIGatewayEvent {
   body?: string | null;
-}
-
-interface ValidatedBody {
-  title: string;
-  description: string;
-  price: number;
-  count: number;
 }
 
 const headers = {
@@ -29,57 +23,6 @@ const badRequest = (message: string) => ({
   headers,
   body: JSON.stringify({ message }),
 });
-
-function validateBody(
-  raw: unknown,
-): { ok: true; data: ValidatedBody } | { ok: false; error: string } {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    return { ok: false, error: "Body must be a JSON object" };
-  }
-  const obj = raw as Record<string, unknown>;
-
-  if (typeof obj.title !== "string" || obj.title.trim() === "") {
-    return {
-      ok: false,
-      error: "title is required and must be a non-empty string",
-    };
-  }
-  if (
-    typeof obj.price !== "number" ||
-    !Number.isFinite(obj.price) ||
-    obj.price <= 0
-  ) {
-    return {
-      ok: false,
-      error: "price is required and must be a positive number",
-    };
-  }
-
-  let description = "";
-  if (obj.description !== undefined) {
-    if (typeof obj.description !== "string") {
-      return { ok: false, error: "description must be a string" };
-    }
-    description = obj.description;
-  }
-
-  let count = 0;
-  if (obj.count !== undefined) {
-    if (
-      typeof obj.count !== "number" ||
-      !Number.isInteger(obj.count) ||
-      obj.count < 0
-    ) {
-      return { ok: false, error: "count must be a non-negative integer" };
-    }
-    count = obj.count;
-  }
-
-  return {
-    ok: true,
-    data: { title: obj.title.trim(), description, price: obj.price, count },
-  };
-}
 
 export async function main(event: APIGatewayEvent) {
   console.log("createProduct:", JSON.stringify({ event }));
@@ -95,7 +38,7 @@ export async function main(event: APIGatewayEvent) {
     return badRequest("Invalid JSON");
   }
 
-  const validation = validateBody(parsed);
+  const validation = validateProductBody(parsed);
   if (!validation.ok) {
     return badRequest(validation.error);
   }

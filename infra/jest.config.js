@@ -14,6 +14,8 @@ module.exports = {
     "^@aws-sdk/client-dynamodb$": "<rootDir>/test/stubs/aws-client-dynamodb.ts",
     "^@aws-sdk/lib-dynamodb$": "<rootDir>/test/stubs/aws-lib-dynamodb.ts",
     "^@aws-sdk/client-s3$": "<rootDir>/test/stubs/aws-client-s3.ts",
+    "^@aws-sdk/client-sns$": "<rootDir>/test/stubs/aws-client-sns.ts",
+    "^@aws-sdk/client-sqs$": "<rootDir>/test/stubs/aws-client-sqs.ts",
     "^@aws-sdk/s3-request-presigner$":
       "<rootDir>/test/stubs/aws-s3-request-presigner.ts",
   },

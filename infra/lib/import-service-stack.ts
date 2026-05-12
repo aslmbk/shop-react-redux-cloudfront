@@ -8,13 +8,18 @@ import {
   aws_lambda,
   aws_s3,
   aws_s3_deployment,
+  aws_sqs,
 } from "aws-cdk-lib";
 import * as s3n from "aws-cdk-lib/aws-s3-notifications";
 import { Construct } from "constructs";
 import * as path from "path";
 
+interface ImportServiceStackProps extends StackProps {
+  catalogItemsQueue: aws_sqs.IQueue;
+}
+
 export class ImportServiceStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: ImportServiceStackProps) {
     super(scope, id, props);
 
     const importBucket = new aws_s3.Bucket(this, "ImportBucket", {
@@ -60,10 +65,14 @@ export class ImportServiceStack extends Stack {
       timeout: Duration.seconds(30),
       handler: "import-file-parser.main",
       code: importServiceCode,
-      environment: { IMPORT_BUCKET_NAME: importBucket.bucketName },
+      environment: {
+        IMPORT_BUCKET_NAME: importBucket.bucketName,
+        CATALOG_ITEMS_QUEUE_URL: props.catalogItemsQueue.queueUrl,
+      },
     });
 
     importBucket.grantReadWrite(importFileParser);
+    props.catalogItemsQueue.grantSendMessages(importFileParser);
 
     importBucket.addEventNotification(
       aws_s3.EventType.OBJECT_CREATED,
