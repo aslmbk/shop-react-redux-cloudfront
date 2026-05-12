@@ -13,6 +13,9 @@ module.exports = {
   moduleNameMapper: {
     "^@aws-sdk/client-dynamodb$": "<rootDir>/test/stubs/aws-client-dynamodb.ts",
     "^@aws-sdk/lib-dynamodb$": "<rootDir>/test/stubs/aws-lib-dynamodb.ts",
+    "^@aws-sdk/client-s3$": "<rootDir>/test/stubs/aws-client-s3.ts",
+    "^@aws-sdk/s3-request-presigner$":
+      "<rootDir>/test/stubs/aws-s3-request-presigner.ts",
   },
   setupFilesAfterEnv: ["aws-cdk-lib/testhelpers/jest-autoclean"],
 };

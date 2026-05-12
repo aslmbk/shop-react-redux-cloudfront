@@ -6,8 +6,9 @@
   },
   "scripts": {
     "clean:build": "node scripts/clean-build-artifacts.mjs",
-    "build": "tsc && npm run bundle:product-service",
+    "build": "tsc && npm run bundle:product-service && npm run bundle:import-service",
     "bundle:product-service": "node scripts/build-product-service.mjs",
+    "bundle:import-service": "node scripts/build-import-service.mjs",
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
@@ -27,10 +28,13 @@
     "typescript": "~5.9.3"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1037.0",
+    "@aws-sdk/s3-request-presigner": "^3.1037.0",
     "@aws-sdk/client-dynamodb": "^3.1037.0",
     "@aws-sdk/lib-dynamodb": "^3.1037.0",
     "aws-cdk-lib": "^2.248.0",
     "constructs": "^10.5.0",
+    "csv-parser": "^3.0.0",
     "uuid": "^14.0.0"
   }
 }
