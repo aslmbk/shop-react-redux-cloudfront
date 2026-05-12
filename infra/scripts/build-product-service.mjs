@@ -23,6 +23,10 @@ await build({
       in: path.join(infraRoot, "lib/product-service/create-product.ts"),
       out: "create-product",
     },
+    {
+      in: path.join(infraRoot, "lib/product-service/catalog-batch-process.ts"),
+      out: "catalog-batch-process",
+    },
   ],
   bundle: true,
   external: ["@aws-sdk/*"],

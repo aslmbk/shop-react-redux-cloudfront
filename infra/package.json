@@ -15,6 +15,7 @@
     "seed:db": "ts-node scripts/seed-dynamodb.ts"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.159",
     "@types/jest": "^30",
     "@types/node": "^24.10.1",
     "@types/uuid": "^10.0.0",
@@ -29,6 +30,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1037.0",
+    "@aws-sdk/client-sns": "^3.1037.0",
+    "@aws-sdk/client-sqs": "^3.1037.0",
     "@aws-sdk/s3-request-presigner": "^3.1037.0",
     "@aws-sdk/client-dynamodb": "^3.1037.0",
     "@aws-sdk/lib-dynamodb": "^3.1037.0",
