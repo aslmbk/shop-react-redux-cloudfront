@@ -1,9 +1,11 @@
 import {
   CfnOutput,
   Duration,
+  RemovalPolicy,
   Stack,
   type StackProps,
   aws_apigateway,
+  aws_dynamodb,
   aws_lambda,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
@@ -13,9 +15,31 @@ export class ProductServiceStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
+    const productsTable = new aws_dynamodb.Table(this, "ProductsTable", {
+      tableName: "products",
+      partitionKey: { name: "id", type: aws_dynamodb.AttributeType.STRING },
+      billingMode: aws_dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
+    const stockTable = new aws_dynamodb.Table(this, "StockTable", {
+      tableName: "stock",
+      partitionKey: {
+        name: "product_id",
+        type: aws_dynamodb.AttributeType.STRING,
+      },
+      billingMode: aws_dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
     const productServiceCode = aws_lambda.Code.fromAsset(
       path.join(__dirname, "../dist/product-service"),
     );
+
+    const lambdaEnv = {
+      PRODUCTS_TABLE_NAME: productsTable.tableName,
+      STOCK_TABLE_NAME: stockTable.tableName,
+    };
 
     const getProductsList = new aws_lambda.Function(this, "getProductsList", {
       runtime: aws_lambda.Runtime.NODEJS_20_X,
@@ -23,6 +47,7 @@ export class ProductServiceStack extends Stack {
       timeout: Duration.seconds(5),
       handler: "get-products-list.main",
       code: productServiceCode,
+      environment: lambdaEnv,
     });
 
     const getProductsById = new aws_lambda.Function(this, "getProductsById", {
@@ -31,7 +56,25 @@ export class ProductServiceStack extends Stack {
       timeout: Duration.seconds(5),
       handler: "get-products-by-id.main",
       code: productServiceCode,
+      environment: lambdaEnv,
     });
+
+    const createProduct = new aws_lambda.Function(this, "createProduct", {
+      runtime: aws_lambda.Runtime.NODEJS_20_X,
+      memorySize: 1024,
+      timeout: Duration.seconds(5),
+      handler: "create-product.main",
+      code: productServiceCode,
+      environment: lambdaEnv,
+    });
+
+    productsTable.grantReadData(getProductsList);
+    stockTable.grantReadData(getProductsList);
+    productsTable.grantReadData(getProductsById);
+    stockTable.grantReadData(getProductsById);
+
+    productsTable.grantWriteData(createProduct);
+    stockTable.grantWriteData(createProduct);
 
     const api = new aws_apigateway.RestApi(this, "ProductServiceApi", {
       restApiName: "Product Service",
@@ -41,7 +84,7 @@ export class ProductServiceStack extends Stack {
       },
       defaultCorsPreflightOptions: {
         allowOrigins: aws_apigateway.Cors.ALL_ORIGINS,
-        allowMethods: ["GET", "OPTIONS"],
+        allowMethods: ["GET", "POST", "OPTIONS"],
       },
     });
 
@@ -49,6 +92,10 @@ export class ProductServiceStack extends Stack {
     products.addMethod(
       "GET",
       new aws_apigateway.LambdaIntegration(getProductsList),
+    );
+    products.addMethod(
+      "POST",
+      new aws_apigateway.LambdaIntegration(createProduct),
     );
 
     const productById = products.addResource("{productId}");
@@ -67,6 +114,18 @@ export class ProductServiceStack extends Stack {
       value: `${api.url}products/{productId}`,
       description: "GET product by id endpoint",
       exportName: "ProductByIdApiUrl",
+    });
+
+    new CfnOutput(this, "ProductsTableName", {
+      value: productsTable.tableName,
+      description: "DynamoDB products table name",
+      exportName: "ProductsTableName",
+    });
+
+    new CfnOutput(this, "StockTableName", {
+      value: stockTable.tableName,
+      description: "DynamoDB stock table name",
+      exportName: "StockTableName",
     });
   }
 }

@@ -5,24 +5,32 @@
     "infra": "bin/infra.js"
   },
   "scripts": {
+    "clean:build": "node scripts/clean-build-artifacts.mjs",
     "build": "tsc && npm run bundle:product-service",
     "bundle:product-service": "node scripts/build-product-service.mjs",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "seed:db": "ts-node scripts/seed-dynamodb.ts"
   },
   "devDependencies": {
     "@types/jest": "^30",
     "@types/node": "^24.10.1",
+    "@types/uuid": "^10.0.0",
+    "aws-cdk": "2.1118.0",
+    "aws-sdk-client-mock": "^4.1.0",
+    "aws-sdk-client-mock-jest": "^4.1.0",
     "esbuild": "^0.25.11",
     "jest": "^30",
     "ts-jest": "^29",
-    "aws-cdk": "2.1118.0",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.3"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1037.0",
+    "@aws-sdk/lib-dynamodb": "^3.1037.0",
     "aws-cdk-lib": "^2.248.0",
-    "constructs": "^10.5.0"
+    "constructs": "^10.5.0",
+    "uuid": "^14.0.0"
   }
 }

@@ -1,9 +1,14 @@
-import { products } from "./products";
+import { GetCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  ddbDocClient,
+  getProductsTable,
+  getStockTable,
+  ProductItem,
+  StockItem,
+} from "./dynamodb";
 
-interface GetProductsByIdEvent {
-  pathParameters?: {
-    productId?: string;
-  } | null;
+interface Event {
+  pathParameters?: { productId?: string } | null;
 }
 
 const headers = {
@@ -11,21 +16,56 @@ const headers = {
   "Content-Type": "application/json",
 };
 
-export async function main(event: GetProductsByIdEvent) {
+export async function main(event: Event) {
+  console.log("getProductsById:", JSON.stringify({ event }));
   const productId = event.pathParameters?.productId;
-  const product = products.find(({ id }) => id === productId);
 
-  if (!product) {
+  if (!productId) {
     return {
-      statusCode: 404,
+      statusCode: 400,
       headers,
-      body: JSON.stringify({ message: "Product not found" }),
+      body: JSON.stringify({ message: "productId is required" }),
     };
   }
 
-  return {
-    statusCode: 200,
-    headers,
-    body: JSON.stringify(product),
-  };
+  try {
+    const [productRes, stockRes] = await Promise.all([
+      ddbDocClient.send(
+        new GetCommand({
+          TableName: getProductsTable(),
+          Key: { id: productId },
+        }),
+      ),
+      ddbDocClient.send(
+        new GetCommand({
+          TableName: getStockTable(),
+          Key: { product_id: productId },
+        }),
+      ),
+    ]);
+
+    if (!productRes.Item) {
+      return {
+        statusCode: 404,
+        headers,
+        body: JSON.stringify({ message: "Product not found" }),
+      };
+    }
+
+    const product = productRes.Item as ProductItem;
+    const stock = stockRes.Item as StockItem | undefined;
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ ...product, count: stock?.count ?? 0 }),
+    };
+  } catch (err) {
+    console.error("getProductsById error:", err);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ message: "Internal Server Error" }),
+    };
+  }
 }
